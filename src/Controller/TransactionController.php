@@ -192,84 +192,6 @@ class TransactionController extends AbstractController
 
 
 
-
-
-
-
-    // /**
-    //  * @Route(
-    //  *      name="retraitUserAgence" ,
-    //  *      path="/api/useragence/retrait/client",
-    //  *      methods={"POST"},
-    //  *      defaults={
-    //  *         "__api_resource_class"=TRansaction::class ,
-    //  *         "__api_collection_operation_name"="retraitUserAgence"
-    //  *     }
-    //  *)
-    // */
-
-    // public function retraitUserAgence(Request $request, Security $security){
-
-    //     // $typeTransaction = array('envoi','retrait');
-    //     // recup tous les donnees
-    //     $dataPostman = json_decode($request->getContent(), true);
-    //     // dd($dataPostman);
-    //     // denormalize 
-    //     $depot = $this->serializer->denormalize($dataPostman, TRansaction::class);
-    //     // dd($dataPostman["comptes"]);
-
-    //     // On recupere l'id compte
-    //     $cpte = $this->compterepository->find($dataPostman["comptes"]);
-       
-    //     //     // Deduction du compte cad lors d'un depot
-    //     // $dept = $cpte->setSolde($cpte->getSolde() - $depot->getMontant());
-       
-    //         // Ajout du compte cad lors d'unretrait
-    //     $dept = $cpte->setSolde($cpte->getSolde() + $depot->getMontant());
-       
-        
-       
-    //     //($cpte->setSolde($cpte->getSolde() - $depot->getMontant()));
-
-    //       // genere code transaction
-    //       $numBeetween = rand(1, 100);  // choose number beetween 100-1000
-    //       $date = new \DateTime('now');
-    //       $genereCodeTransaction = ($numBeetween.date_format($date, 'YmdHi'));
-
-    //     $depot->setDateDepot(new DateTime())
-    //           ->setdateRetrait(new DateTime())
-    //           ->setdateAnnulation(new DateTime())
-    //           ->setUser($security->getUser())
-    //           ->setTtc(100)
-    //           ->setfraisEtat(40)
-    //           ->setfraisSystem(30)
-    //           ->setfraisEnvoi(10)
-    //           ->setfraisRetrait(20)
-    //           ->setCodeTransaction(1)
-    //           ->setTypeTransaction("retrait");
-
-    //         //   ->getCompte()->setSolde($cpte->getSolde() - $depot->getMontant()); 
-    //         //    + $depot->solde
-            
-    //     //    dd(($depot->getCompte()));
-        
-
-         
-    //     $this->entitymanagerinterface->persist($depot);
-    //     $this->entitymanagerinterface->persist($dept);
-    //     $this->entitymanagerinterface->flush();
-
-    //     return $this->json("success",201);
-
-    // }
-
-
-
-
-    
-    
-
-
     /**
      * @Route(
      *      name="retraitUserAgence" ,
@@ -309,7 +231,7 @@ class TransactionController extends AbstractController
                 //  dd($compteFocus);
                 
                 //update client received  
-                $clientReceiver = $this->clientrepository->find($transactionDo->getClientDepot()->getId());
+                $clientReceiver = $this->clientrepository->find($transactionDo->getClientRetrait()->getId());
                 $clientReceiver->setSolde($transactionDo->getMontant());
                 $clientReceiver->setAction("retrait");
                 $this->entitymanagerinterface->persist($clientReceiver);
@@ -332,4 +254,61 @@ class TransactionController extends AbstractController
     }
 
 
+
+
+
+
+    /**
+     * @Route(
+     *      name="getTransactionByCode" ,
+     *      path="/api/transaction/{code}" ,
+     *     methods={"GET"} ,
+     *     defaults={
+     *         "__controller"="App\Controller\TransactionController::getTransactionByCode",
+     *         "_api_resource_class"=Transaction::class ,
+     *         "_api_collection_operation_name"="getTransactionByCode"
+     *     }
+     *)
+     */
+    public function getTransactionByCode(Request $request, SerializerInterface $serializer, $code)
+    {
+        $data = array();
+        
+        $transaction =  $this->transactionrepository->findTransactionByCode($code) ;
+
+        if($transaction) {
+           
+            $recuperator = $this->clientrepository->findById($transaction->getClientRetrait()->getId());
+            // if($recuperator) {
+                $envoyer = $this->clientrepository->findById($transaction->getClientDepot()->getId());
+                
+                foreach($envoyer as $env ) {
+                    foreach($recuperator as $recup) {
+                        array_push($data, $transaction, $env, $recup );
+                    }
+                }
+                return $this->json($data , 200);
+            // } 
+            // else {
+            //     $deposer = $this->clientRepository->findById($transaction->getCompteEnvoi()->getId());
+            //     $retrait = $this->clientRepository->findById($transaction->getCompteRetrait()->getId());
+                
+            //     foreach($deposer as $dep) {
+            //         foreach($retrait as $ret) {
+            //             array_push($data, $transaction, $dep, $ret);
+            //         }
+            //     }
+            //     return $this->json($data , 200);
+            // }
+
+        } 
+        else {
+            return $this->json("Ce code n'est pas valide", 400);  
+        }
+
+    }
+
 }
+
+
+
