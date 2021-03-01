@@ -15,8 +15,5 @@ class AdminSystem extends User
 {
     
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+  
 }

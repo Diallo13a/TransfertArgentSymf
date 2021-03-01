@@ -36,13 +36,13 @@ class Profil
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
-     * @Groups({"get_trois"})
+     * @Groups({"get_trois","post_un"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"get_trois","post_trois"})
+     * @Groups({"get_trois","post_trois","post_un"})
      */
     private $libelle;
 

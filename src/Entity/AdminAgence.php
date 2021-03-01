@@ -14,8 +14,5 @@ use ApiPlatform\Core\Annotation\ApiResource;
 class AdminAgence extends User
 {
     
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+   
 }

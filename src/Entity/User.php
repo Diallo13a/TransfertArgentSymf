@@ -24,13 +24,13 @@ use Symfony\Component\Security\Core\User\UserInterface;
  *                   "security"="is_granted('ROLE_ADMINSYSTEM')",
  *                   "security_message"="Vous n'avez pas access à cette Ressource"
  *          },
- *          "post_un"={
- *               "method"="POST",
- *                   "path"="/users",
- *                   "denormalization_context"={"groups"={"post_un"}},
- *                   "security"="is_granted('ROLE_ADMINSYSTEM')",
- *                   "security_message"="Vous n'avez pas access à cette Ressource"
- *          }
+ *          
+ *          "adding"={
+ *              "route_name"="addUser" ,
+ *              "method"="POST",
+ *               "deserialize"=false,
+ *              "denormalization_context"={"groups"={"post_un"}}
+ *           }
  * }
  *  )
  */
@@ -40,13 +40,13 @@ class User implements UserInterface
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
-     * @Groups({"get_un_ad:read","depotCaissier:read"})
+     * @Groups({"get_un_ad:read","depotCaissier:read","getcai_un","post_un"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=180, unique=true)
-     * @Groups({"get_un_ad:read","post_un"})
+     * @Groups({"get_un_ad:read","post_un","getcai_un"})
      */
     private $email;
 
@@ -61,25 +61,25 @@ class User implements UserInterface
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"get_un_ad:read","post_un","depotCaissier:read"})
+     * @Groups({"get_un_ad:read","post_un","depotCaissier:read","getcai_un"})
      */
     private $username;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"get_un_ad:read","post_un","depotCaissier:read"})
+     * @Groups({"get_un_ad:read","post_un","depotCaissier:read","getcai_un"})
      */
     private $nom;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"get_un_ad:read","post_un","depotCaissier:read"})
+     * @Groups({"get_un_ad:read","post_un","depotCaissier:read","getcai_un"})
      */
     private $prenom;
 
     /**
      * @ORM\Column(type="integer", nullable=true)
-     * @Groups({"get_un_ad:read","post_un"})
+     * @Groups({"get_un_ad:read","post_un","getcai_un"})
      */
     private $phone;
 
@@ -104,10 +104,11 @@ class User implements UserInterface
      * @ORM\Column(type="boolean", nullable=true)
      * @Groups({"get_un_ad:read","post_un"})
      */
-    private $archivage=0;
+    private $archivage;
 
     /**
      * @ORM\ManyToOne(targetEntity=Profil::class, inversedBy="users")
+     * @Groups({"get_un_ad:read","post_un"})
      */
     private $profil;
 
@@ -131,6 +132,7 @@ class User implements UserInterface
     {
         $this->depot = new ArrayCollection();
         $this->transaction = new ArrayCollection();
+        $this->archivage = 0;
     }
 
     public function getId(): ?int
@@ -271,7 +273,12 @@ class User implements UserInterface
 
     public function getAvatar()
     {
-        return $this->avatar;
+        $avatar = $this->avatar;
+        if (!empty($avatar))
+        {
+            return (base64_encode(stream_get_contents($avatar)));
+        }
+        return $avatar;
     }
 
     public function setAvatar($avatar): self

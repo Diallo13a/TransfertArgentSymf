@@ -27,7 +27,17 @@ use Symfony\Component\Serializer\Annotation\Groups;
  *                   "security"="is_granted('ROLE_ADMINSYSTEM')",
  *                   "security_message"="Vous n'avez pas access à cette Ressource"
  *          }
- * }
+ *      
+ * },
+ *     itemOperations={
+ *           "delc_un"={
+ *               "method"="DELETE",
+ *                   "path"="/compte/{id}",
+ *                   "normalization_context"={"groups"={"delc_un:read"}},
+ *                   "security"="is_granted('ROLE_ADMINSYSTEM')",
+ *                   "security_message"="Vous n'avez pas access à cette Ressource"
+ *          }
+ *          }     
  *  )
  */
 class Compte
@@ -36,13 +46,13 @@ class Compte
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
-     * @Groups({"depotCaissier:read","postc_un:read","getc_un"})
+     * @Groups({"depotCaissier:read","postc_un:read","getc_un","delc_un:read"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="integer")
-     * @Groups({"depotCaissier:read","getc_un"})
+     * @Groups({"depotCaissier:read","getc_un","delc_un:read"})
      */
     private $numCompte;
 
