@@ -39,36 +39,71 @@ class CaissierController extends AbstractController   // Tout cet travail devrai
          $this->userrepository = $userRepository;
     }
 
-    // /**
-    //  * @Route(
-    //  *      name="depotCaissier" ,
-    //  *      path="/api/caissier/depot/compte",
-    //  *      methods={"POST"},
-    //  *      defaults={
-    //  *         "__api_resource_class"=Depot::class ,
-    //  *         "__api_collection_operation_name"="depotCaissier"
-    //  *     }
-    //  *)
-    // */
+    /**
+     * @Route(
+     *      name="depotCaissier" ,
+     *      path="/api/caissier/depot/compte",
+     *      methods={"POST"},
+     *      defaults={
+     *         "__api_resource_class"=Depot::class ,
+     *         "__api_collection_operation_name"="depotCaissier"
+     *     }
+     *)
+    */
 
     public function depotByCaissier(Request $request, Security $security){
         
         // recup tous les donnees
-        $dataPostman = json_decode($request->getContent(), true);
+        // $dataPostman = json_decode($request->getContent(), true);
+        $dataPostman =  json_decode($request->getContent());
+        //  dd($dataPostman);
         // denormalize 
-        $depot = $this->serializer->denormalize($dataPostman, Depot::class);
-        dd($depot);
-        $depot->setDateDepot(new DateTime())
-              ->setUser($security->getUser())
-              ->getCompte()->setSolde($depot->getMontantDEpot());
+        // $depot = $this->serializer->denormalize($dataPostman, Depot::class);
+        $montant = $dataPostman->montantDEpot ; //get montant
+        // dd($montant);
+        $utilisateur = $dataPostman->user ; //get id utilisateur
+        // dd($utilisateur);
+
+         // Validate negatif number 
+         if($montant < 0) {
+            // return new JsonResponse("Can be negative number!" ,400) ; 
+             return $this->json("le montant ne peut pas être négatif!",400);
+         } 
+        
+          // // Instancier Depot
+        $newDepot = new Depot();
+        $newDepot->setDateDepot(new DateTime());    
+        $newDepot->setmontantDEpot($dataPostman->montantDEpot);
+        $newDepot->setUser($security->getUser());
+         //get id agence of utilisateur cad id de l'utilisateur on cherche son correspondance de son agence
+         $idAgence = $this->userrepository->findOneBy(['id'=>(int)$utilisateur])->getAgence()->getId();
+        //  dd($idAgence);
+        // Id de l'agence ci_dessus on cherche son compte
+        $focusCompte = $this->compterepository->findBy(['agence'=>$idAgence]); //reper account
+        dd($focusCompte);
+        $newDepot->setCompte($focusCompte[0]);
+        // dd($newDepot);
+        $this->entitymanagerinterface->persist($newDepot);
+        $focusCompte[0]->setSolde($focusCompte[0]->getSolde() + $montant);
+        // dd($focusCompte);
+        $this->entitymanagerinterface->persist($focusCompte[0]);
+        $this->entitymanagerinterface->flush();
+
+        return $this->json("Votre dépôt a réussi avec success!",201);
+
+
+        
+        // $depot->setDateDepot(new DateTime())
+        //       ->setUser($security->getUser())
+        //       ->getCompte()->setSolde($depot->getMontantDEpot());
            
         // dd(($depot->getCompte()));
 
          
-        $this->entitymanagerinterface->persist($depot);
-        $this->entitymanagerinterface->flush();
+        // $this->entitymanagerinterface->persist($depot);
+        // $this->entitymanagerinterface->flush();
 
-        return $this->json("success",201);
+        // return $this->json("success",201);
 
         
         // // get numCompte

@@ -72,6 +72,16 @@ class TransactionController extends AbstractController
         // $typeTransaction = array('envoi','retrait');
         // recup tous les donnees
         $dataPostman = json_decode($request->getContent(), true);
+        // Dans cette partie on a recupéré l'utilisateur qui se trouve dans une agence et l'id qui correspond à cette agence
+        $userconnect = $this->getUser()->getId();
+        //dd($userconnect);
+        // On a le solde
+        // $solde=$this->getUser()->getAgence()->getCompte()[1]->getSolde();
+    
+        // Id compte
+        $idcompte =$this->getUser()->getAgence()->getCompte()[1]->getId();
+        // dd($idcompte);
+        // dd($solde);
         // dd($dataPostman);
         // denormalize 
         $depot = $this->serializer->denormalize($dataPostman, TRansaction::class);
@@ -128,14 +138,10 @@ class TransactionController extends AbstractController
         // $montant = $this->compterepository->find($dataPostman["montant"]);
         // dd($montant);
 
-        // On recupere l'id compte
-        $cpte = $this->compterepository->find($dataPostman["comptes"]);
+        // On recupere le compte (l'id compte)
+        // $cpte = $this->compterepository->find($dataPostman["comptes"]);
         // dd($cpte);
-        // Deduction du compte cad lors d'un depot cad actualisation 
-        $dept = $cpte->setSolde(($cpte->getSolde() - ($dataPostman["montant"])) + $fraisDepot) ;
-
-
-        // dd($dept);
+       
        
        
         //     // Ajout du compte cad lors d'unretrait
@@ -154,7 +160,6 @@ class TransactionController extends AbstractController
         $depot->setDateDepot(new DateTime())
               ->setdateRetrait(new DateTime())
               ->setdateAnnulation(new DateTime())
-              ->setUser($security->getUser())
               ->setTtc(100)
               ->setfraisEtat($etat)
               ->setfraisSystem($system)
@@ -165,6 +170,19 @@ class TransactionController extends AbstractController
               ->setClientRetrait($clientRecv)
               ->setTypeTransaction("EnCours");
 
+               // Les infos du compte
+        $newsolde= $this->compterepository->find((int)$idcompte);
+        // dd($newsolde);
+        // Deduction du compte cad lors d'un depot cad actualisation 
+        $newsolde->setSolde(($newsolde->getSolde() - ($dataPostman["montant"])) + $fraisDepot) ;
+        // $newsolde->addTRansaction($depot);
+        $user = $this->userrepository->find((int)$userconnect);
+        // dd($user);
+        $depot->setCompteRetrait($newsolde);
+
+        $depot->setUser($user);
+        // dd($depot);
+
             //   ->getCompte()->setSolde($cpte->getSolde() - $depot->getMontant()); 
             //    + $depot->solde
             
@@ -173,7 +191,7 @@ class TransactionController extends AbstractController
 
          
         $this->entitymanagerinterface->persist($depot);
-        $this->entitymanagerinterface->persist($dept);
+        $this->entitymanagerinterface->persist($newsolde);
         $this->entitymanagerinterface->persist($clientEnv);
         $this->entitymanagerinterface->persist($clientRecv);
         $this->entitymanagerinterface->flush();
@@ -255,17 +273,14 @@ class TransactionController extends AbstractController
 
 
 
-
-
-
     /**
      * @Route(
      *      name="getTransactionByCode" ,
      *      path="/api/transaction/{code}" ,
-     *     methods={"GET"} ,
-     *     defaults={
+     *      methods={"GET"} ,
+     *      defaults={
      *         "__controller"="App\Controller\TransactionController::getTransactionByCode",
-     *         "_api_resource_class"=Transaction::class ,
+     *         "_api_resource_class"=TRansaction::class ,
      *         "_api_collection_operation_name"="getTransactionByCode"
      *     }
      *)
@@ -306,6 +321,100 @@ class TransactionController extends AbstractController
             return $this->json("Ce code n'est pas valide", 400);  
         }
 
+    }
+
+
+    
+
+    /**
+     * @Route(
+     *      name="recupTransaction" ,
+     *      path="/api/recupTransaction/{code}" ,
+     *     methods={"GET"} ,
+     *     defaults={
+     *         "__controller"="App\Controller\TransactionController::recupTransaction",
+     *         "_api_resource_class"=TRansaction::class ,
+     *         "_api_collection_operation_name"="recupTransaction"
+     *     }
+     *)
+     */
+    public function recupTransaction(Request $request, SerializerInterface $serializer, $code)
+    {
+        $transactionDo =  $this->transactionrepository->findTransactionByCode($code) ;
+             
+        if($transactionDo) {
+            
+            if($transactionDo->getTypeTransaction() == "Reussie") {
+                 return $this->json("Cette transaction est déjà retirée ", 400);  
+            } else if($transactionDo->getTypeTransaction() == "Annulée"){
+                 return $this->json("Cette transaction a étè annulée ", 400);  
+            } else {
+
+                $userConnected = $this->getUser();  //for recup token's user
+                  //get id agence of utilisateur
+                $idAgence = $this->userrepository->findOneBy(['id'=>$userConnected->getId()])->getAgence()->getId();
+                // dd($idAgence);
+                $focusCompte = $this->compterepository->findBy(['agence'=>$idAgence])[0]; //reper account
+                // dd($focusCompte);
+
+                $time = new \DateTime();
+                $dateFormatted = date_format($time,"d/m/Y H:i");
+                $transactionDo->setDateRetrait($time);
+                $transactionDo->setTypeTransaction("Reussie");
+                $transactionDo->setCompteRetrait($focusCompte);
+                // $transactionDo->setClientRetrait($userConnected);
+                $this->entitymanagerinterface->persist($transactionDo);
+                 //  dd($transactionDo);
+                
+                $compteFocus =  $this->compterepository->findOneBy(['id'=>(int)$focusCompte->getId()]);
+                $compteFocus->setSolde($compteFocus->getSolde() +$transactionDo->getMontant() + $transactionDo->getFraisRetrait());
+                // $compteFocus->setMiseajour($dateFormatted);
+                $this->entitymanagerinterface->persist($compteFocus);
+               // dd($compteFocus->getMiseajour());
+                
+                //update client received  
+                $clientReceiver = $this->clientrepository->find($transactionDo->getClientRetrait()->getId());
+                $clientReceiver->setSolde($transactionDo->getMontant());
+                $clientReceiver->setAction("retrait");
+                $this->entitymanagerinterface->persist($clientReceiver);
+
+             
+                // summarize transaction
+                $summarizeTransaction = new SummarizeTransaction();
+                $summarizeTransaction->setMontant($transactionDo->getMontant());
+                $summarizeTransaction->setCompte($focusCompte->getId());
+                $summarizeTransaction->setType("retrait");
+                // $summarizeTransaction->setUser($userConnected->getId());
+                // $summarizeTransaction->setDate(date_format($time,"d/m/Y"));
+                // $summarizeTransaction->setFrais(0);
+                $this->entitymanagerinterface->persist($summarizeTransaction);
+
+
+                
+                 $this->entitymanagerinterface->flush();
+                 // return $this->json("Vous avez retiré ".$transactionDo->getMontant()." par le distributeur N°".$focusCompte->getIdentifiantCompte()."."."\n"."Date de retrait: ".$focusCompte->getMiseajour()."", 200);
+                 return $this->json("retrait reussit", 201);
+            }
+           
+        } else {
+            return $this->json("Ce code n'est pas valide", 400);  
+        }
+      
+    }
+
+    /*  ******************* End Recup Transaction ******************** */
+
+    /**
+     * @Route(
+     *  path="/api/transaction", 
+     *  name="getAllTransaction", 
+     *  methods={"GET"}
+     * )
+     */
+    public function getAllTransaction(Request $request){
+        
+        $transaction = $this->transactionrepository->findAll();
+        return $this->json($transaction, Response::HTTP_OK, [], );
     }
 
 }

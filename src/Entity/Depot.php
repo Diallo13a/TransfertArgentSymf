@@ -30,7 +30,7 @@ class Depot
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
-     * @Groups({"depotCaissier:read"})
+     * @Groups({"depotCaissier:read","annuleDepotByCaissier:read"})
      */
     private $id;
 
@@ -56,7 +56,7 @@ class Depot
 
     /**
      * @ORM\ManyToOne(targetEntity=Compte::class, inversedBy="depots")
-     * @Groups({"depotCaissier:read"})
+     * @Groups({"depotCaissier:read","annuleDepotByCaissier:read"})
      * @ApiSubresource()
      */
     private $compte;

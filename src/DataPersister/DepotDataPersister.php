@@ -25,9 +25,9 @@ final class DepotDataPersister implements ContextAwareDataPersisterInterface
     public function persist($data, array $context = [])
     {
       // cumul sum compte after depot
-      $data->getCompte()->setSolde($data->getCompte()->getSolde() + $data->getMontantDEpot());
-      $this->_entityManager->persist($data);
-      $this->_entityManager->flush();
+      // $data->getCompte()->setSolde($data->getCompte()->getSolde() + $data->getMontantDEpot());
+      // $this->_entityManager->persist($data);
+      // $this->_entityManager->flush();
     }
 
     public function remove($data, array $context = [])

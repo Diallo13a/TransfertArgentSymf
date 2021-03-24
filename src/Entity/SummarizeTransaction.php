@@ -34,6 +34,11 @@ class SummarizeTransaction
      */
     private $compte;
 
+    /**
+     * @ORM\ManyToOne(targetEntity=User::class, inversedBy="summarizeTransactions")
+     */
+    private $user;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -71,6 +76,18 @@ class SummarizeTransaction
     public function setCompte(int $compte): self
     {
         $this->compte = $compte;
+
+        return $this;
+    }
+
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): self
+    {
+        $this->user = $user;
 
         return $this;
     }

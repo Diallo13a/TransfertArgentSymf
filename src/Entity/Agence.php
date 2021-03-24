@@ -19,12 +19,13 @@ class Agence
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
-     * @Groups({"postc_un:read"})
+     * @Groups({"postc_un:read","getUserById:read"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Groups({"getUserById:read"})
      */
     private $nomAgence;
 
@@ -45,6 +46,7 @@ class Agence
 
     /**
      * @ORM\OneToMany(targetEntity=Compte::class, mappedBy="agence")
+     * @Groups({"getUserById:read"})
      */
     private $compte;
 

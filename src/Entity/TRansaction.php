@@ -11,14 +11,12 @@ use Doctrine\ORM\Mapping as ORM;
  *      collectionOperations={
  *           "depotUserAgence"={
  *                   "method"="POST",
- *                   "path"="useragence/depot/client",
- *                   "security"="is_granted('ROLE_UTILISATEURAGENCE')",
+ *                   "path"="useragence/depot/client",  
  *                   "security_message"="Vous n'avez pas access à cette Ressource"
  *          },
  *             "retraitUserAgence"={
  *                   "method"="POST",
  *                   "path"="useragence/retrait/client/{code}",
- *                   "security"="is_granted('ROLE_UTILISATEURAGENCE')",
  *                   "security_message"="Vous n'avez pas access à cette Ressource"
  *          }
  *

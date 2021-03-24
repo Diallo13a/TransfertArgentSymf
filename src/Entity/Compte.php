@@ -11,33 +11,15 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity(repositoryClass=CompteRepository::class)
- * @ApiResource(routePrefix= "/admin",
- *      collectionOperations={
- *           "postc_un"={
- *               "method"="POST",
- *                   "path"="/cree/compte",
- *                   "normalization_context"={"groups"={"postc_un:read"}},
- *                   "security"="is_granted('ROLE_ADMINSYSTEM')",
- *                   "security_message"="Vous n'avez pas access à cette Ressource"
- *          },
- *           "getc_un"={
+ * @ApiResource(
+ *          collectionOperations={
+ *           "getCompteByAgence"={
  *               "method"="GET",
- *                   "path"="/compte",
- *                   "normalization_context"={"groups"={"getc_un:read"}},
- *                   "security"="is_granted('ROLE_ADMINSYSTEM')",
+ *                   "path"="compte/{idAgence}/agence",
+ *                   "normalization_context"={"groups"={"getCompteByAgence:read"}},
  *                   "security_message"="Vous n'avez pas access à cette Ressource"
  *          }
- *      
- * },
- *     itemOperations={
- *           "delc_un"={
- *               "method"="DELETE",
- *                   "path"="/compte/{id}",
- *                   "normalization_context"={"groups"={"delc_un:read"}},
- *                   "security"="is_granted('ROLE_ADMINSYSTEM')",
- *                   "security_message"="Vous n'avez pas access à cette Ressource"
- *          }
- *          }     
+ * }
  *  )
  */
 class Compte
@@ -46,19 +28,19 @@ class Compte
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
-     * @Groups({"depotCaissier:read","postc_un:read","getc_un","delc_un:read"})
+     * @Groups({"depotCaissier:read","postc_un:read","getc_un","delc_un:read","annuleDepotByCaissier:read","getCompteByAgence","getUserById:read"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="integer")
-     * @Groups({"depotCaissier:read","getc_un","delc_un:read"})
+     * @Groups({"depotCaissier:read","getc_un","delc_un:read","getCompteByAgence","getUserById:read"})
      */
     private $numCompte;
 
     /**
      * @ORM\Column(type="integer")
-     * @Groups({"depotCaissier:read","getc_un"})
+     * @Groups({"depotCaissier:read","getc_un","getCompteByAgence","getUserById:read"})
      */
     private $solde;
 
@@ -69,6 +51,7 @@ class Compte
 
     /**
      * @ORM\ManyToOne(targetEntity=Agence::class, inversedBy="compte")
+     * @Groups({"getCompteByAgence"})
      */
     private $agence;
 

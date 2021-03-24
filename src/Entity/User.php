@@ -24,6 +24,12 @@ use Symfony\Component\Security\Core\User\UserInterface;
  *                   "security"="is_granted('ROLE_ADMINSYSTEM')",
  *                   "security_message"="Vous n'avez pas access à cette Ressource"
  *          },
+ *          "getUserById:read"={
+ *               "method"="GET",
+ *                   "path"="/user/{id}",
+ *                   "normalization_context"={"groups"={"getUserById:read"}},
+ *                   "security_message"="Vous n'avez pas access à cette Ressource"
+ *          },
  *          
  *          "adding"={
  *              "route_name"="addUser" ,
@@ -40,7 +46,7 @@ class User implements UserInterface
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
-     * @Groups({"get_un_ad:read","depotCaissier:read","getcai_un","post_un"})
+     * @Groups({"get_un_ad:read","depotCaissier:read","getcai_un","post_un","annuleDepotByCaissier:read","getUserById:read"})
      */
     private $id;
 
@@ -61,25 +67,25 @@ class User implements UserInterface
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"get_un_ad:read","post_un","depotCaissier:read","getcai_un"})
+     * @Groups({"get_un_ad:read","post_un","depotCaissier:read","getcai_un","getUserById:read"})
      */
     private $username;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"get_un_ad:read","post_un","depotCaissier:read","getcai_un"})
+     * @Groups({"get_un_ad:read","post_un","depotCaissier:read","getcai_un","getUserById:read"})
      */
     private $nom;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
-     * @Groups({"get_un_ad:read","post_un","depotCaissier:read","getcai_un"})
+     * @Groups({"get_un_ad:read","post_un","depotCaissier:read","getcai_un","getUserById:read"})
      */
     private $prenom;
 
     /**
      * @ORM\Column(type="integer", nullable=true)
-     * @Groups({"get_un_ad:read","post_un","getcai_un"})
+     * @Groups({"get_un_ad:read","post_un","getcai_un","getUserById:read"})
      */
     private $phone;
 
@@ -91,6 +97,7 @@ class User implements UserInterface
 
     /**
      * @ORM\Column(type="blob", nullable=true)
+     * @Groups({"get_un_ad:read","post_un","getUserById:read"})
      */
     private $avatar;
 
@@ -114,12 +121,13 @@ class User implements UserInterface
 
     /**
      * @ORM\OneToMany(targetEntity=Depot::class, mappedBy="user")
-     * @Groups({"depotCaissier:read"})
+     * @Groups({"depotCaissier:read","annuleDepotByCaissier:read"})
      */
     private $depot;
 
     /**
      * @ORM\ManyToOne(targetEntity=Agence::class, inversedBy="users")
+     * @Groups({"getUserById:read"})
      */
     private $agence;
 
@@ -128,11 +136,17 @@ class User implements UserInterface
      */
     private $transaction;
 
+    /**
+     * @ORM\OneToMany(targetEntity=SummarizeTransaction::class, mappedBy="user")
+     */
+    private $summarizeTransactions;
+
     public function __construct()
     {
         $this->depot = new ArrayCollection();
         $this->transaction = new ArrayCollection();
         $this->archivage = 0;
+        $this->summarizeTransactions = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -390,6 +404,36 @@ class User implements UserInterface
             // set the owning side to null (unless already changed)
             if ($transaction->getUser() === $this) {
                 $transaction->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|SummarizeTransaction[]
+     */
+    public function getSummarizeTransactions(): Collection
+    {
+        return $this->summarizeTransactions;
+    }
+
+    public function addSummarizeTransaction(SummarizeTransaction $summarizeTransaction): self
+    {
+        if (!$this->summarizeTransactions->contains($summarizeTransaction)) {
+            $this->summarizeTransactions[] = $summarizeTransaction;
+            $summarizeTransaction->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSummarizeTransaction(SummarizeTransaction $summarizeTransaction): self
+    {
+        if ($this->summarizeTransactions->removeElement($summarizeTransaction)) {
+            // set the owning side to null (unless already changed)
+            if ($summarizeTransaction->getUser() === $this) {
+                $summarizeTransaction->setUser(null);
             }
         }
 
